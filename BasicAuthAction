@@ -1,0 +1,62 @@
+package actions;
+
+import models.User;
+import models.UserRole;
+import play.libs.F;
+import play.mvc.Action;
+import play.mvc.Http;
+import play.mvc.Result;
+
+import static play.mvc.Http.Context.Implicit.session;
+//import play.mvc.Result;
+/**
+ * Created by abinash.
+ */
+public class BasicAuthAction extends Action<BasicAuthAbi> {
+
+
+
+
+    public F.Promise<Result> call(Http.Context context) throws Throwable {
+
+        String[] params = configuration.value();
+        int c = params.length;
+
+        boolean found = false;
+        if (params.length == 0) {
+            found = true;
+        }
+
+
+
+
+
+        // Loop the given parameters(role names) to check that the user belongs to one of them
+        for (String role : params) {
+            // validate types
+
+            int roleCount = User.find.where().eq("role", role).findRowCount();
+            if (roleCount == 0) {
+                throw new Exception("Auth code is not found.");
+            }
+
+            if (session().get("role").equals(role)){
+                found = true;
+            }
+
+        }
+
+        // if the role is not found for the user, it means the user is not authorised
+        if (!found) {
+            // no access, redirect to home login
+            return F.Promise.pure(redirect("/error401"));
+        }
+
+
+
+        // execute the action
+        return delegate.call(context);
+    }
+
+
+}
